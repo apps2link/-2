@@ -28,11 +28,20 @@ jobs:
         run: |
           unzip -q "أُنسي.zip" -d extracted
           echo "=== Project files ==="
-          find extracted -maxdepth 4 -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "gradlew" -o -name "build.gradle" -o -name "build.gradle.kts" \)
+          find extracted -maxdepth 4 -type f \( \
+            -name "settings.gradle" -o \
+            -name "settings.gradle.kts" -o \
+            -name "gradlew" -o \
+            -name "build.gradle" -o \
+            -name "build.gradle.kts" \
+          \)
 
       - name: Locate Android project
         run: |
-          PROJECT_DIR=$(find extracted -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) -printf '%h\n' | head -n 1)
+          PROJECT_DIR=$(find extracted -type f \( \
+            -name "settings.gradle" -o \
+            -name "settings.gradle.kts" \
+          \) -printf '%h\n' | head -n 1)
 
           if [ -z "$PROJECT_DIR" ]; then
             echo "ERROR: Android project not found"
@@ -49,9 +58,21 @@ jobs:
           if [ -f "$WRAPPER" ]; then
             sed -i 's#^distributionUrl=.*#distributionUrl=https\\://services.gradle.org/distributions/gradle-9.3.1-bin.zip#' "$WRAPPER"
           else
-            echo "Gradle Wrapper properties file not found"
+            echo "ERROR: Gradle Wrapper properties file not found"
             exit 1
           fi
+
+      - name: Generate Debug Keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$PROJECT_DIR/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build APK
         run: |
